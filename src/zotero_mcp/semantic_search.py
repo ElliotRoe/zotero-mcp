@@ -377,7 +377,7 @@ class ZoteroSemanticSearch:
                         if should_extract:
                             # Extract fulltext if item doesn't have it yet
                             if not getattr(it, "fulltext", None):
-                                text = reader.extract_fulltext_for_item(it.item_id)
+                                text = reader.extract_fulltext_for_item(it.item_id) or "Full text empty"
                                 if text:
                                     # Support new (text, source) return format
                                     if isinstance(text, tuple) and len(text) == 2:
