@@ -227,7 +227,7 @@ class ZoteroSemanticSearch:
         
         return False
     
-    def _get_items_from_source(self, limit: Optional[int] = None, extract_fulltext: bool = False, chroma_client: Optional[ChromaClient] = None, force_rebuild: bool = False) -> List[Dict[str, Any]]:
+    def _get_items_from_source(self, limit: Optional[int] = None, extract_fulltext: bool = False, chroma_client: Optional[ChromaClient] = None, force_rebuild: bool = False, pdf_timeout: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get items from either local database or API.
         
@@ -248,12 +248,13 @@ class ZoteroSemanticSearch:
                 limit, 
                 extract_fulltext=extract_fulltext,
                 chroma_client=chroma_client,
-                force_rebuild=force_rebuild
+                force_rebuild=force_rebuild,
+                pdf_timeout=pdf_timeout
             )
         else:
             return self._get_items_from_api(limit)
     
-    def _get_items_from_local_db(self, limit: Optional[int] = None, extract_fulltext: bool = False, chroma_client: Optional[ChromaClient] = None, force_rebuild: bool = False) -> List[Dict[str, Any]]:
+    def _get_items_from_local_db(self, limit: Optional[int] = None, extract_fulltext: bool = False, chroma_client: Optional[ChromaClient] = None, force_rebuild: bool = False, pdf_timeout: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get items from local Zotero database.
         
@@ -280,7 +281,7 @@ class ZoteroSemanticSearch:
             except Exception:
                 pass
 
-            with suppress_stdout(), LocalZoteroReader(pdf_max_pages=pdf_max_pages) as reader:
+            with suppress_stdout(), LocalZoteroReader(pdf_max_pages=pdf_max_pages, pdf_timeout=pdf_timeout) as reader:
                 # Phase 1: fetch metadata only (fast)
                 sys.stderr.write("Scanning local Zotero database for items...\n")
                 local_items = reader.get_items_with_text(limit=limit, include_fulltext=False)
@@ -541,7 +542,8 @@ class ZoteroSemanticSearch:
     def update_database(self, 
                        force_full_rebuild: bool = False,
                        limit: Optional[int] = None,
-                       extract_fulltext: bool = False) -> Dict[str, Any]:
+                       extract_fulltext: bool = False,
+                       pdf_timeout: Optional[int] = None) -> Dict[str, Any]:
         """
         Update the semantic search database with Zotero items.
         
@@ -578,9 +580,9 @@ class ZoteroSemanticSearch:
                 limit=limit, 
                 extract_fulltext=extract_fulltext,
                 chroma_client=self.chroma_client if not force_full_rebuild else None,
-                force_rebuild=force_full_rebuild
+                force_rebuild=force_full_rebuild,
+                pdf_timeout=pdf_timeout
             )
-
             stats["total_items"] = len(all_items)
             logger.info(f"Found {stats['total_items']} items to process")
             # Immediate progress line so users see counts up-front
